@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>부동산 매물 리포트 — {{ date }}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Noto Sans KR', sans-serif;
+           background: #f5f6fa; color: #2d3436; font-size: 14px; }
+    .container { max-width: 720px; margin: 0 auto; padding: 16px; }
+    h1 { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+    .subtitle { color: #636e72; font-size: 12px; margin-bottom: 20px; }
+
+    /* 섹션 헤더 */
+    .section-title {
+      font-size: 13px; font-weight: 700; color: #636e72;
+      text-transform: uppercase; letter-spacing: .5px;
+      margin: 20px 0 10px;
+    }
+
+    /* 매물 카드 */
+    .card {
+      background: #fff; border-radius: 12px; padding: 14px 16px;
+      margin-bottom: 10px; box-shadow: 0 1px 4px rgba(0,0,0,.06);
+    }
+    .card-header { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+    .card-name { font-weight: 700; font-size: 15px; flex: 1; }
+    .tag {
+      font-size: 11px; font-weight: 700; border-radius: 6px;
+      padding: 2px 7px; white-space: nowrap;
+    }
+    .tag-urgent { background: #ffeaa7; color: #d35400; }
+    .tag-new    { background: #dfe6e9; color: #2d3436; }
+    .price { font-size: 17px; font-weight: 800; color: #e17055; margin-bottom: 4px; }
+    .meta  { font-size: 12px; color: #636e72; }
+    .urgent-reason { font-size: 11px; color: #e17055; margin-top: 4px; }
+
+    /* 그래프 embed */
+    .chart-wrap { background:#fff; border-radius:12px; padding:12px;
+                  margin-bottom:10px; box-shadow:0 1px 4px rgba(0,0,0,.06); }
+
+    /* 유튜브 섹션 */
+    .yt-item { background:#fff; border-radius:12px; padding:12px 14px;
+               margin-bottom:8px; box-shadow:0 1px 4px rgba(0,0,0,.06); }
+    .yt-title { font-weight:600; font-size:13px; margin-bottom:4px; }
+    .yt-meta  { font-size:11px; color:#636e72; }
+    .yt-keywords { display:flex; flex-wrap:wrap; gap:4px; margin-top:6px; }
+    .kw-tag { font-size:11px; background:#e8f4fd; color:#2980b9;
+              border-radius:5px; padding:2px 7px; }
+
+    /* 지도 */
+    .map-section { margin-bottom: 20px; }
+
+    /* 통계 뱃지 */
+    .stats { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+    .stat-badge { background:#fff; border-radius:10px; padding:10px 14px;
+                  box-shadow:0 1px 4px rgba(0,0,0,.06); flex:1; min-width:100px; text-align:center; }
+    .stat-num { font-size:22px; font-weight:800; color:#6c5ce7; }
+    .stat-label { font-size:11px; color:#636e72; margin-top:2px; }
+
+    a { color: #3498db; text-decoration: none; }
+    footer { text-align:center; font-size:11px; color:#b2bec3; margin-top:24px; padding-bottom:20px; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>🏠 부동산 매물 리포트</h1>
+  <p class="subtitle">{{ date }} 기준 · 서울/경기 아파트 5억~9억 17~24평</p>
+
+  <!-- 통계 요약 -->
+  <div class="stats">
+    <div class="stat-badge">
+      <div class="stat-num">{{ total_count }}</div>
+      <div class="stat-label">전체 매물</div>
+    </div>
+    <div class="stat-badge">
+      <div class="stat-num">{{ new_count }}</div>
+      <div class="stat-label">신규 매물</div>
+    </div>
+    <div class="stat-badge">
+      <div class="stat-num">{{ urgent_count }}</div>
+      <div class="stat-label">급매</div>
+    </div>
+  </div>
+
+  <!-- 급매 섹션 -->
+  {% if urgent_listings %}
+  <div class="section-title">🚨 급매 매물</div>
+  {% for l in urgent_listings %}
+  <div class="card">
+    <div class="card-header">
+      <span class="card-name">{{ l.name }}</span>
+      <span class="tag tag-urgent">🚨 급매</span>
+      {% if l.is_new %}<span class="tag tag-new">🆕 신규</span>{% endif %}
+    </div>
+    <div class="price">{{ (l.price // 10000) }}억 {{ "{:,}".format(l.price % 10000) }}만원</div>
+    <div class="meta">{{ l.area_pyeong }}평 · {{ l.floor }}층 · {{ l.address }}</div>
+    {% if l.urgent_reason %}
+    <div class="urgent-reason">{{ l.urgent_reason }}</div>
+    {% endif %}
+    <div style="margin-top:8px"><a href="{{ l.url }}">네이버 매물 보기 →</a></div>
+  </div>
+  {% endfor %}
+  {% endif %}
+
+  <!-- 신규 매물 섹션 -->
+  {% if new_listings %}
+  <div class="section-title">🆕 신규 등록 매물</div>
+  {% for l in new_listings %}
+  <div class="card">
+    <div class="card-header">
+      <span class="card-name">{{ l.name }}</span>
+      <span class="tag tag-new">🆕 신규</span>
+    </div>
+    <div class="price">{{ (l.price // 10000) }}억 {{ "{:,}".format(l.price % 10000) }}만원</div>
+    <div class="meta">{{ l.area_pyeong }}평 · {{ l.floor }}층 · {{ l.address }}</div>
+    <div style="margin-top:8px"><a href="{{ l.url }}">네이버 매물 보기 →</a></div>
+  </div>
+  {% endfor %}
+  {% endif %}
+
+  <!-- 전체 매물 섹션 -->
+  <div class="section-title">📋 전체 매물 ({{ total_count }}건)</div>
+  {% for l in all_listings %}
+  <div class="card">
+    <div class="card-header">
+      <span class="card-name">{{ l.name }}</span>
+      {% if l.is_urgent %}<span class="tag tag-urgent">🚨 급매</span>{% endif %}
+      {% if l.is_new %}<span class="tag tag-new">🆕 신규</span>{% endif %}
+    </div>
+    <div class="price">{{ (l.price // 10000) }}억 {{ "{:,}".format(l.price % 10000) }}만원</div>
+    <div class="meta">{{ l.area_pyeong }}평 · {{ l.floor }}층 · {{ l.address }}</div>
+    {% if l.description %}
+    <div class="meta" style="margin-top:4px">{{ l.description }}</div>
+    {% endif %}
+    <div style="margin-top:8px"><a href="{{ l.url }}">네이버 매물 보기 →</a></div>
+  </div>
+  {% endfor %}
+
+  <!-- 지도 -->
+  <div class="section-title">🗺️ 매물 지도</div>
+  <div class="map-section">{{ map_html | safe }}</div>
+
+  <!-- 즐겨찾기 단지 실거래가 그래프 -->
+  {% if charts %}
+  <div class="section-title">📈 즐겨찾기 단지 실거래가 추이</div>
+  {% for chart in charts %}
+  <div class="chart-wrap">
+    <div style="font-weight:700;margin-bottom:8px">{{ chart.name }}</div>
+    {% if is_email and chart.png_b64 %}
+    <img src="data:image/png;base64,{{ chart.png_b64 }}" style="width:100%;border-radius:8px;" alt="{{ chart.name }} 그래프">
+    {% else %}
+    {{ chart.html | safe }}
+    {% endif %}
+  </div>
+  {% endfor %}
+  {% endif %}
+
+  <!-- 유튜브 분석 -->
+  {% if youtube_summary %}
+  <div class="section-title">📺 유튜브 부동산 채널 키워드 분석</div>
+
+  {% if youtube_summary.keyword_ranking %}
+  <div class="card" style="margin-bottom:12px">
+    <div style="font-weight:700;margin-bottom:8px">지역 언급 TOP {{ youtube_summary.keyword_ranking|length }}</div>
+    <div class="yt-keywords">
+      {% for kw, cnt in youtube_summary.keyword_ranking %}
+      <span class="kw-tag">{{ kw }} ({{ cnt }})</span>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% for video in youtube_summary.all_analyses %}
+  <div class="yt-item">
+    <div class="yt-title"><a href="{{ video.url }}" target="_blank">{{ video.title }}</a></div>
+    <div class="yt-meta">{{ video.channel }} · {{ video.published_at }}</div>
+    {% if video.keywords %}
+    <div class="yt-keywords">
+      {% for kw, cnt in video.keywords.items() %}
+      <span class="kw-tag">{{ kw }} ×{{ cnt }}</span>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+  {% endfor %}
+  {% endif %}
+
+  <footer>
+    자동 생성된 리포트입니다 · {{ date }}<br>
+    <a href="https://land.naver.com" target="_blank">네이버 부동산</a>에서 실제 매물을 확인하세요
+  </footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,8 @@
+actions-runner/
+__pycache__/
+*.pyc
+.env
+data/previous_listings.json
+data/price_history.json
+data/notion_db_id.txt
+docs/

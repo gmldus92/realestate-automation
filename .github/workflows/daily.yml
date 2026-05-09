@@ -1,0 +1,65 @@
+name: realestate-daily
+
+on:
+  schedule:
+    - cron: "0 0 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  run:
+    runs-on: self-hosted
+    timeout-minutes: 20
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: setup python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: install packages
+        run: pip install -r requirements.txt
+
+      - name: install playwright
+        run: playwright install chromium --with-deps
+
+      - name: restore data
+        uses: actions/download-artifact@v4
+        with:
+          name: listings-data
+          path: data/
+        continue-on-error: true
+
+      - name: run
+        env:
+          KREB_API_KEY: ${{ secrets.KREB_API_KEY }}
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+          KAKAO_MAP_KEY: ${{ secrets.KAKAO_MAP_KEY }}
+          GMAIL_CREDENTIALS: ${{ secrets.GMAIL_CREDENTIALS }}
+          REPORT_EMAIL: ${{ secrets.REPORT_EMAIL }}
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_PARENT_PAGE_ID: ${{ secrets.NOTION_PARENT_PAGE_ID }}
+        run: python main.py
+
+      - name: save data
+        uses: actions/upload-artifact@v4
+        with:
+          name: listings-data
+          path: |
+            data/previous_listings.json
+            data/price_history.json
+            data/notion_db_id.txt
+          retention-days: 2
+
+      - name: deploy pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs
+          publish_branch: gh-pages
+          force_orphan: false

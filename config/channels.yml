@@ -1,0 +1,16 @@
+# 모니터링할 유튜버 채널 목록
+# channel_id는 시스템이 YouTube API로 @handle → UC... 자동 변환
+channels:
+  - name: 급집사
+    handle: "@gupzip4"
+  - name: 월급쟁이부자들
+    handle: "@weolbu_official"
+  - name: 작가송희구
+    handle: "@thewriter-song"
+  - name: 부읽남
+    handle: "@buiknam_tv"
+  - name: 푸릉
+    handle: "@prng_official"
+  - name: 아파트써처
+    handle: "@아파트써처"
+  # 채널 추가 시 여기에 name + handle 추가

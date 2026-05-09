@@ -1,0 +1,21 @@
+# 매물 수집 조건
+listing:
+  price_min: 50000  # 만원 (5억)
+  price_max: 90000  # 만원 (9억)
+  area_min: 17      # 평형
+  area_max: 24      # 평형
+  property_type: 아파트
+  regions:
+    - 서울
+    - 경기
+
+# 급매 판별 조건
+urgent_sale:
+  keyword: 급매
+  price_discount_threshold: 20  # 평균 단가 대비 -20% 이상
+
+# 리포트 설정
+report:
+  email_to: ""  # 수신 이메일 (GitHub Secrets의 REPORT_EMAIL로도 설정 가능)
+  send_hour_kst: 9  # 발송 시각 (KST)
+  chart_unit: 일  # 그래프 단위: 일 | 주 | 월

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🚨 가격 변동 알림</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Noto Sans KR', sans-serif;
+           background:#f5f6fa; padding:20px; }
+    .box { max-width:420px; margin:0 auto; background:#fff;
+           border-radius:16px; padding:24px; box-shadow:0 2px 8px rgba(0,0,0,.08); }
+    h2 { font-size:18px; margin-bottom:4px; }
+    .sub { color:#636e72; font-size:12px; margin-bottom:20px; }
+    .alert-card { border-left: 4px solid #e17055; background:#fff5f0;
+                  border-radius:8px; padding:14px; margin-bottom:12px; }
+    .complex-name { font-weight:700; font-size:16px; margin-bottom:8px; }
+    .price-row { display:flex; align-items:center; gap:12px; }
+    .price-old { color:#636e72; font-size:14px; }
+    .price-new { font-size:20px; font-weight:800; }
+    .up   { color:#e17055; }
+    .down { color:#0984e3; }
+    .change-pct { font-size:13px; font-weight:700; }
+    .deal-date { font-size:11px; color:#b2bec3; margin-top:6px; }
+  </style>
+</head>
+<body>
+<div class="box">
+  <h2>🚨 즐겨찾기 단지 가격 변동 알림</h2>
+  <p class="sub">{{ date }} · 임계값 {{ threshold }}% 초과</p>
+
+  {% for alert in alerts %}
+  <div class="alert-card">
+    <div class="complex-name">{{ alert.complex_name }}</div>
+    <div class="price-row">
+      <div class="price-old">{{ "{:,}".format(alert.prev_price) }}만원</div>
+      <div>→</div>
+      <div class="price-new {{ 'up' if alert.direction == '상승' else 'down' }}">
+        {{ "{:,}".format(alert.new_price) }}만원
+      </div>
+      <div class="change-pct {{ 'up' if alert.direction == '상승' else 'down' }}">
+        {{ '▲' if alert.direction == '상승' else '▼' }} {{ alert.change_pct }}%
+      </div>
+    </div>
+    <div class="deal-date">최근 거래일: {{ alert.deal_date }}</div>
+  </div>
+  {% endfor %}
+</div>
+</body>
+</html>

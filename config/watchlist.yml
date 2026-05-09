@@ -1,0 +1,31 @@
+# 즐겨찾기 단지 (실거래가 집중 분석 대상)
+# complex_id는 시스템이 네이버 부동산 검색으로 자동 조회
+favorites:
+  - name: 비산힐스테이트
+    area: 안양 비산
+  - name: 래미안안양메가트리아
+    area: 안양 평촌
+  - name: 삼성래미안
+    area: 안양 만안
+  - name: 도덕파크타운
+    area: 광명 철산
+  - name: 광명한진타운
+    area: 광명
+  - name: 하안주공4단지
+    area: 광명 철산
+  - name: 광명아크포레자이
+    area: 광명
+  # 단지 추가 시 여기에 name + area 추가
+
+# 유튜브 키워드 모니터링 희망 지역
+watch_regions:
+  - 광명
+  - 안양
+  - 평촌
+  - 가양
+  - 등촌
+  - 범계
+  # 지역 추가 시 여기에 추가
+
+# 가격 알림 임계값 (%)
+price_alert_threshold: 3.0
