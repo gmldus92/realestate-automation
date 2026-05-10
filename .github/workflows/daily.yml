@@ -16,17 +16,11 @@ jobs:
       - name: checkout
         uses: actions/checkout@v4
 
-      - name: setup python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-          cache: pip
-
       - name: install packages
-        run: pip install -r requirements.txt
+        run: pip3 install -r requirements.txt
 
       - name: install playwright
-        run: playwright install chromium --with-deps
+        run: python3 -m playwright install chromium
 
       - name: restore data
         uses: actions/download-artifact@v4
@@ -44,7 +38,7 @@ jobs:
           REPORT_EMAIL: ${{ secrets.REPORT_EMAIL }}
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
           NOTION_PARENT_PAGE_ID: ${{ secrets.NOTION_PARENT_PAGE_ID }}
-        run: python main.py
+        run: python3 main.py
 
       - name: save data
         uses: actions/upload-artifact@v4
