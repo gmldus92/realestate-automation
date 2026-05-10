@@ -55,6 +55,13 @@ async def fetch_listings(settings: dict) -> list[Listing]:
         )
         page = await context.new_page()
 
+        # 쿠키 획득을 위해 메인 페이지 먼저 방문
+        try:
+            await page.goto("https://m.land.naver.com/", wait_until="networkidle", timeout=30000)
+            print("[naver_land] 메인 페이지 방문 완료 (쿠키 획득)")
+        except Exception as e:
+            print(f"[naver_land] 메인 페이지 방문 실패: {e}")
+
         for region in regions:
             region_code = _REGION_CODES.get(region)
             if not region_code:
