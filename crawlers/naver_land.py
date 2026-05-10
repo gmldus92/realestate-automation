@@ -1,6 +1,5 @@
 """네이버 부동산 매물 크롤러 (Playwright 기반 — 셀프 호스팅 러너용)"""
 import asyncio
-import json
 from dataclasses import dataclass, asdict
 
 from playwright.async_api import async_playwright
@@ -80,23 +79,25 @@ async def fetch_listings(settings: dict) -> list[Listing]:
                     "areaMin": int(area_min * 3.305785),
                     "areaMax": int(area_max * 3.305785),
                 }
-                query = "&".join(f"{k}={v}" for k, v in params.items())
-                url = f"{_BASE_URL}?{query}"
 
                 try:
-                    await page.goto(url, wait_until="networkidle", timeout=60000)
+                    # page.goto 대신 context.request.get()으로 AJAX 요청
+                    resp = await context.request.get(
+                        _BASE_URL,
+                        params=params,
+                        headers={
+                            "Accept": "application/json, text/javascript, */*; q=0.01",
+                            "Referer": "https://m.land.naver.com/",
+                            "X-Requested-With": "XMLHttpRequest",
+                        },
+                    )
+                    data = await resp.json()
                 except Exception as e:
-                    print(f"[naver_land] 페이지 로드 실패: {e}")
-                    break
-                raw = await page.inner_text("body")
-
-                try:
-                    data = json.loads(raw)
-                except json.JSONDecodeError:
+                    print(f"[naver_land] 요청 실패: {e}")
                     break
 
                 if not data or not isinstance(data, dict):
-                    print(f"[naver_land] 응답 이상 (raw[:200]): {raw[:200]}")
+                    print(f"[naver_land] 응답 이상: {str(data)[:200]}")
                     break
 
                 articles = data.get("body", {}).get("list", [])
