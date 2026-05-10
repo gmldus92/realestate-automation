@@ -88,6 +88,10 @@ async def fetch_listings(settings: dict) -> list[Listing]:
                 except json.JSONDecodeError:
                     break
 
+                if not data or not isinstance(data, dict):
+                    print(f"[naver_land] 응답 이상 (raw[:200]): {raw[:200]}")
+                    break
+
                 articles = data.get("body", {}).get("list", [])
                 if not articles:
                     break
