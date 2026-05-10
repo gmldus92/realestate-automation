@@ -48,7 +48,8 @@ async def fetch_transactions(region_code: str, yyyymm: str) -> list[Transaction]
 
     results: list[Transaction] = []
 
-    async with aiohttp.ClientSession() as session:
+    connector = aiohttp.TCPConnector(ssl=False)
+    async with aiohttp.ClientSession(connector=connector) as session:
         async with session.get(BASE_URL, params=params) as resp:
             text = await resp.text()
 
