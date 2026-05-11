@@ -34,6 +34,7 @@ async def fetch_listings(settings: dict) -> list[Listing]:
 
     area_min_m2 = int(area_min * 3.305785)
     area_max_m2 = int(area_max * 3.305785)
+    _ = regions  # settings에서 읽지만 인터셉트 방식에서는 URL 필터로 대체
 
     intercepted: list[dict] = []
 
@@ -82,7 +83,7 @@ async def fetch_listings(settings: dict) -> list[Listing]:
         print(f"[naver_land] 검색 페이지 로딩: {search_url}")
         try:
             await page.goto(search_url, wait_until="load", timeout=60000)
-            await asyncio.sleep(5)  # API 응답 대기
+            await asyncio.sleep(15)  # React 앱 초기화 + API 응답 대기
         except Exception as e:
             print(f"[naver_land] 페이지 로드 오류: {e}")
 
