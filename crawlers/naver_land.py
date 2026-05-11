@@ -91,7 +91,9 @@ async def fetch_listings(settings: dict) -> list[Listing]:
                             "X-Requested-With": "XMLHttpRequest",
                         },
                     )
-                    data = await resp.json()
+                    raw_text = await resp.text()
+                    print(f"[naver_land] status={resp.status} raw={raw_text[:300]}")
+                    data = await resp.json() if resp.ok else None
                 except Exception as e:
                     print(f"[naver_land] 요청 실패: {e}")
                     break
