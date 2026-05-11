@@ -40,9 +40,9 @@ async def fetch_listings(settings: dict) -> list[Listing]:
 
     async def handle_response(response: Response) -> None:
         url = response.url
-        if "land.naver.com" in url:
-            print(f"[naver_land] 응답: {response.status} {url[:120]}")
-        if "single-markers" not in url and "articleList" not in url:
+        if "naver.com" in url and response.status == 200 and "json" in response.headers.get("content-type", ""):
+            print(f"[naver_land] JSON 응답: {url[:150]}")
+        if "single-markers" not in url and "articleList" not in url and "items" not in url and "listings" not in url:
             return
         if response.status != 200:
             return
@@ -71,23 +71,56 @@ async def fetch_listings(settings: dict) -> list[Listing]:
         page = await context.new_page()
         page.on("response", handle_response)
 
-        search_url = (
-            "https://new.land.naver.com/"
-            f"?ms=37.55,127.0,10"
-            f"&a=APT"
-            f"&b=A1"
-            f"&e=RETAIL"
-            f"&f={price_min}"
-            f"&g={price_max}"
-            f"&h={area_min_m2}"
-            f"&i={area_max_m2}"
-        )
-        print(f"[naver_land] 검색 페이지 로딩: {search_url}")
+        # fin.land.naver.com 새 UI 탐색
+        print("[naver_land] fin.land.naver.com 로딩 중...")
         try:
-            await page.goto(search_url, wait_until="load", timeout=60000)
-            await asyncio.sleep(15)
+            await page.goto(
+                "https://fin.land.naver.com/map?center=3zcU0o-2AImhU&zoom=13",
+                wait_until="domcontentloaded",
+                timeout=60000,
+            )
+            await asyncio.sleep(10)
+            print("[naver_land] 페이지 로드 완료")
         except Exception as e:
-            print(f"[naver_land] 페이지 로드 오류: {e}")
+            print(f"[naver_land] 로드 실패: {e}")
+
+        # 타일별 API 호출 (page.evaluate로 same-origin fetch)
+        TILES = [
+            (37.43, 37.57, 126.76, 126.97, "서울"),
+            (37.43, 37.57, 126.97, 127.18, "서울"),
+            (37.57, 37.71, 126.76, 126.97, "서울"),
+            (37.57, 37.71, 126.97, 127.18, "서울"),
+            (37.38, 37.56, 126.76, 126.97, "경기"),
+            (37.20, 37.45, 126.97, 127.25, "경기"),
+            (37.55, 37.75, 126.74, 126.97, "경기"),
+            (37.55, 37.75, 126.97, 127.35, "경기"),
+        ]
+        for bottom_lat, top_lat, left_lon, right_lon, region_label in TILES:
+            if region_label not in regions:
+                continue
+            qs = (
+                f"zoom=13&priceType=RETAIL&realEstateType=APT&tradeType=A1"
+                f"&priceMin={price_min}&priceMax={price_max}"
+                f"&areaMin={area_min_m2}&areaMax={area_max_m2}"
+                f"&showArticle=false&sameAddressGroup=false"
+                f"&leftLon={left_lon}&rightLon={right_lon}"
+                f"&topLat={top_lat}&bottomLat={bottom_lat}"
+            )
+            result = await page.evaluate(f"""
+                async () => {{
+                    const r = await fetch('/api/complexes/single-markers/2.0?{qs}', {{
+                        headers: {{'Accept': 'application/json'}}
+                    }});
+                    const t = await r.text();
+                    try {{ return JSON.parse(t); }} catch(e) {{ return null; }}
+                }}
+            """)
+            if isinstance(result, list):
+                intercepted.extend(result)
+                print(f"[naver_land] {region_label} ({bottom_lat}~{top_lat}): {len(result)}개 단지")
+            else:
+                print(f"[naver_land] {region_label} 응답 이상: {str(result)[:100]}")
+            await asyncio.sleep(10)
 
         print(f"[naver_land] 인터셉트 완료: 총 {len(intercepted)}개 항목")
         await browser.close()
