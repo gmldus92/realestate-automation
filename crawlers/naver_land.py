@@ -64,8 +64,9 @@ async def fetch_listings(settings: dict) -> list[Listing]:
     async def handle_response(response: Response) -> None:
         url = response.url
         ct = response.headers.get("content-type", "")
+        if "naver.com" in url and response.status == 200:
+            print(f"[naver_land] 응답: {url[:150]} | ct={ct[:50]}")
         if "fin.land.naver.com" in url and response.status == 200 and "json" in ct:
-            print(f"[naver_land] JSON: {url[:150]}")
             try:
                 data = await response.json()
                 if isinstance(data, list) and data:
