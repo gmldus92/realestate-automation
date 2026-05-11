@@ -40,6 +40,8 @@ async def fetch_listings(settings: dict) -> list[Listing]:
 
     async def handle_response(response: Response) -> None:
         url = response.url
+        if "land.naver.com" in url:
+            print(f"[naver_land] 응답: {response.status} {url[:120]}")
         if "single-markers" not in url and "articleList" not in url:
             return
         if response.status != 200:
@@ -48,7 +50,7 @@ async def fetch_listings(settings: dict) -> list[Listing]:
             data = await response.json()
             if isinstance(data, list) and data:
                 intercepted.extend(data)
-                print(f"[naver_land] 인터셉트: {len(data)}개 단지 ({url[:80]}...)")
+                print(f"[naver_land] 인터셉트: {len(data)}개 단지")
             elif isinstance(data, dict):
                 arts = data.get("body", {}).get("list", [])
                 if arts:
@@ -69,21 +71,21 @@ async def fetch_listings(settings: dict) -> list[Listing]:
         page = await context.new_page()
         page.on("response", handle_response)
 
-        # 서울/경기 전체가 보이는 줌 레벨로 검색 페이지 접근
-        # 가격/면적 필터 포함
         search_url = (
-            "https://new.land.naver.com/apartments"
+            "https://new.land.naver.com/"
             f"?ms=37.55,127.0,10"
-            f"&a=APT:PRE:ABYG:JGC"
+            f"&a=APT"
             f"&b=A1"
             f"&e=RETAIL"
-            f"&g={price_min},{price_max}"
-            f"&s={area_min_m2},{area_max_m2}"
+            f"&f={price_min}"
+            f"&g={price_max}"
+            f"&h={area_min_m2}"
+            f"&i={area_max_m2}"
         )
         print(f"[naver_land] 검색 페이지 로딩: {search_url}")
         try:
             await page.goto(search_url, wait_until="load", timeout=60000)
-            await asyncio.sleep(15)  # React 앱 초기화 + API 응답 대기
+            await asyncio.sleep(15)
         except Exception as e:
             print(f"[naver_land] 페이지 로드 오류: {e}")
 
