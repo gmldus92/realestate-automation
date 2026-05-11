@@ -21,21 +21,18 @@ def _get_service():
 
     if TOKEN_FILE.exists():
         creds = Credentials.from_authorized_user_file(str(TOKEN_FILE), SCOPES)
+    elif CREDENTIALS_JSON:
+        cred_data = json.loads(CREDENTIALS_JSON)
+        TOKEN_FILE.parent.mkdir(parents=True, exist_ok=True)
+        creds = Credentials.from_authorized_user_info(cred_data, SCOPES)
 
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
+    if not creds:
+        raise RuntimeError("Gmail 인증 정보가 없습니다. gmail_token.json 또는 GMAIL_CREDENTIALS 필요.")
+
+    if not creds.valid:
+        if creds.expired and creds.refresh_token:
             creds.refresh(Request())
-        else:
-            # GitHub Actions: 환경변수에서 credentials 로드
-            if CREDENTIALS_JSON:
-                cred_data = json.loads(CREDENTIALS_JSON)
-                TOKEN_FILE.parent.mkdir(parents=True, exist_ok=True)
-                TOKEN_FILE.write_text(json.dumps(cred_data))
-                creds = Credentials.from_authorized_user_info(cred_data, SCOPES)
-            else:
-                raise RuntimeError("GMAIL_CREDENTIALS 환경변수가 설정되지 않았습니다.")
-
-        TOKEN_FILE.write_text(creds.to_json())
+            TOKEN_FILE.write_text(creds.to_json())
 
     return build("gmail", "v1", credentials=creds)
 
