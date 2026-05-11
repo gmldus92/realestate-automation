@@ -11,7 +11,7 @@ from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 
 SCOPES = ["https://www.googleapis.com/auth/gmail.send"]
-TOKEN_FILE = Path(__file__).parent.parent / "data" / "gmail_token.json"
+TOKEN_FILE = Path.home() / ".config" / "realestate" / "gmail_token.json"
 CREDENTIALS_JSON = os.environ.get("GMAIL_CREDENTIALS", "")  # JSON 문자열
 REPORT_EMAIL = os.environ.get("REPORT_EMAIL", "")
 
