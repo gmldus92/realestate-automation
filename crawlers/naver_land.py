@@ -1,6 +1,5 @@
 """네이버 부동산 매물 크롤러 (Playwright + page.evaluate fetch — 셀프 호스팅 러너용)"""
 import asyncio
-import json
 from dataclasses import dataclass, asdict
 
 from playwright.async_api import async_playwright
@@ -39,27 +38,34 @@ REGION_TILES = [
 ]
 
 
-async def _fetch_via_evaluate(page, path: str, params: dict):
-    """page.evaluate()로 same-origin fetch — 쿠키 자동 포함"""
+async def _fetch_via_evaluate(page, path: str, params: dict, retries: int = 3):
+    """page.evaluate()로 same-origin fetch — 쿠키 자동 포함, rate limit 재시도"""
     query = "&".join(f"{k}={v}" for k, v in params.items())
     url = f"{path}?{query}"
-    try:
-        result = await page.evaluate(f"""
-            async () => {{
-                const resp = await fetch('{url}', {{
-                    headers: {{
-                        'Accept': 'application/json, text/javascript, */*; q=0.01',
-                        'Referer': 'https://new.land.naver.com/'
-                    }}
-                }});
-                const text = await resp.text();
-                try {{ return JSON.parse(text); }} catch(e) {{ return null; }}
-            }}
-        """)
-        return result
-    except Exception as e:
-        print(f"[naver_land] evaluate 오류: {e}")
-        return None
+    for attempt in range(retries):
+        try:
+            result = await page.evaluate(f"""
+                async () => {{
+                    const resp = await fetch('{url}', {{
+                        headers: {{
+                            'Accept': 'application/json, text/javascript, */*; q=0.01',
+                            'Referer': 'https://new.land.naver.com/'
+                        }}
+                    }});
+                    const text = await resp.text();
+                    try {{ return JSON.parse(text); }} catch(e) {{ return null; }}
+                }}
+            """)
+            if isinstance(result, dict) and result.get("code") == "TOO_MANY_REQUESTS":
+                wait = 10 * (attempt + 1)
+                print(f"[naver_land] rate limit — {wait}초 대기 ({attempt+1}/{retries})")
+                await asyncio.sleep(wait)
+                continue
+            return result
+        except Exception as e:
+            print(f"[naver_land] evaluate 오류: {e}")
+            await asyncio.sleep(5)
+    return None
 
 
 async def fetch_listings(settings: dict) -> list[Listing]:
@@ -183,9 +189,9 @@ async def fetch_listings(settings: dict) -> list[Listing]:
                     except Exception:
                         continue
 
-                await asyncio.sleep(0.1)
+                await asyncio.sleep(0.5)
 
-            await asyncio.sleep(0.5)
+            await asyncio.sleep(3)
 
         await browser.close()
 
