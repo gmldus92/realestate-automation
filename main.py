@@ -86,21 +86,20 @@ async def run(dry_run: bool = False) -> None:
 
     favorites_summary = " / ".join(favorites_summary_parts)
 
-    # 최근 실거래가 TOP 5 (전체 즐겨찾기 통합)
-    all_transactions_flat = []
+    # 단지별 최근 실거래가 5개씩
+    trades_by_complex: dict[str, list] = {}
     for fav in favorites:
         name = fav["name"]
         area = fav.get("area", "")
         region_code_map = {"안양": "41171", "광명": "41210"}
         region_code = region_code_map.get(area.split()[0], "41171")
         if not dry_run:
-            txs = await kreb_api.fetch_recent_transactions(name, region_code, months=3)
-            all_transactions_flat.extend(txs)
-    recent_trades = sorted(
-        all_transactions_flat,
-        key=lambda t: (t.deal_year, t.deal_month, t.deal_day),
-        reverse=True,
-    )[:5]
+            txs = await kreb_api.fetch_recent_transactions(name, region_code, months=6)
+            trades_by_complex[name] = sorted(
+                txs,
+                key=lambda t: (t.deal_year, t.deal_month, t.deal_day),
+                reverse=True,
+            )[:5]
 
     # ── 5. 유튜브 분석 ─────────────────────────────────────────────
     if dry_run:
@@ -116,7 +115,7 @@ async def run(dry_run: bool = False) -> None:
     report_template = env.get_template("report.html")
     render_args = dict(
         date=today,
-        recent_trades=recent_trades,
+        trades_by_complex=trades_by_complex,
         charts=charts,
         youtube_summary=yt_summary,
     )

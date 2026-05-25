@@ -60,29 +60,32 @@
   <h1>🏠 부동산 리포트</h1>
   <p class="subtitle">{{ date }} 기준 자동 생성</p>
 
-  <!-- 최근 실거래가 TOP 5 -->
-  {% if recent_trades %}
+  <!-- 단지별 최근 실거래가 5개씩 -->
+  {% if trades_by_complex %}
   <div class="section-title">🏷️ 즐겨찾기 단지 최근 실거래가</div>
+  {% for complex_name, trades in trades_by_complex.items() %}
+  {% if trades %}
+  <div style="font-weight:700; font-size:13px; margin: 12px 0 6px;">{{ complex_name }}</div>
   <table class="trade-table">
     <thead>
       <tr>
         <th>날짜</th>
-        <th>단지명</th>
         <th>평형</th>
         <th>실거래가</th>
       </tr>
     </thead>
     <tbody>
-      {% for t in recent_trades %}
+      {% for t in trades %}
       <tr>
         <td>{{ t.deal_date }}</td>
-        <td>{{ t.complex_name }}</td>
         <td>{{ "%.1f"|format(t.area_m2 / 3.305785) }}평</td>
         <td class="price-cell">{{ "{:,}".format(t.deal_amount) }}만원</td>
       </tr>
       {% endfor %}
     </tbody>
   </table>
+  {% endif %}
+  {% endfor %}
   {% endif %}
 
   <!-- 즐겨찾기 단지 실거래가 그래프 -->
