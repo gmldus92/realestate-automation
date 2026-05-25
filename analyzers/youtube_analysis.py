@@ -114,24 +114,24 @@ async def analyze_channels(channels: list[dict], watch_regions: list[str]) -> li
 
 
 def summarize(analyses: list[VideoAnalysis]) -> dict:
-    """전체 키워드 빈도 집계 + TOP 언급 지역"""
+    """전체 키워드 빈도 집계 + 채널별 그룹화"""
     total: Counter = Counter()
     for a in analyses:
         total.update(a.keyword_counts)
 
-    all_analyses = [
-        {
-            "channel": a.channel_name,
+    by_channel: dict[str, list[dict]] = {}
+    for a in analyses:
+        entry = {
             "title": a.title,
             "published_at": a.published_at,
             "keywords": a.keyword_counts,
             "url": f"https://youtu.be/{a.video_id}",
         }
-        for a in analyses
-    ]
+        by_channel.setdefault(a.channel_name, []).append(entry)
+
     return {
         "total_videos": len(analyses),
         "keyword_ranking": total.most_common(10),
-        "analyses": [v for v in all_analyses if v["keywords"]],
-        "all_analyses": all_analyses,
+        "by_channel": by_channel,
+        "all_analyses": list(by_channel.values()),
     }

@@ -86,6 +86,22 @@ async def run(dry_run: bool = False) -> None:
 
     favorites_summary = " / ".join(favorites_summary_parts)
 
+    # 최근 실거래가 TOP 5 (전체 즐겨찾기 통합)
+    all_transactions_flat = []
+    for fav in favorites:
+        name = fav["name"]
+        area = fav.get("area", "")
+        region_code_map = {"안양": "41171", "광명": "41210"}
+        region_code = region_code_map.get(area.split()[0], "41171")
+        if not dry_run:
+            txs = await kreb_api.fetch_recent_transactions(name, region_code, months=3)
+            all_transactions_flat.extend(txs)
+    recent_trades = sorted(
+        all_transactions_flat,
+        key=lambda t: (t.deal_year, t.deal_month, t.deal_day),
+        reverse=True,
+    )[:5]
+
     # ── 5. 유튜브 분석 ─────────────────────────────────────────────
     if dry_run:
         yt_summary = {}
@@ -96,19 +112,11 @@ async def run(dry_run: bool = False) -> None:
         print(f"[main] 분석된 영상: {yt_summary.get('total_videos', 0)}개")
 
     # ── 6. 리포트 생성 ─────────────────────────────────────────────
-    map_html = map_builder.build_map_html(listings)
-
     env = Environment(loader=FileSystemLoader(str(TEMPLATE_DIR)))
     report_template = env.get_template("report.html")
     render_args = dict(
         date=today,
-        total_count=len(listings),
-        new_count=new_count,
-        urgent_count=len(urgent_listings),
-        urgent_listings=urgent_listings,
-        new_listings=new_listings_only,
-        all_listings=listings,
-        map_html=map_html,
+        recent_trades=recent_trades,
         charts=charts,
         youtube_summary=yt_summary,
     )

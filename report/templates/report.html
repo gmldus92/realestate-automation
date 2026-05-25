@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>부동산 매물 리포트 — {{ date }}</title>
+  <title>부동산 리포트 — {{ date }}</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Noto Sans KR', sans-serif;
@@ -12,52 +12,44 @@
     h1 { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
     .subtitle { color: #636e72; font-size: 12px; margin-bottom: 20px; }
 
-    /* 섹션 헤더 */
     .section-title {
       font-size: 13px; font-weight: 700; color: #636e72;
       text-transform: uppercase; letter-spacing: .5px;
-      margin: 20px 0 10px;
+      margin: 24px 0 10px;
     }
 
-    /* 매물 카드 */
-    .card {
-      background: #fff; border-radius: 12px; padding: 14px 16px;
-      margin-bottom: 10px; box-shadow: 0 1px 4px rgba(0,0,0,.06);
-    }
-    .card-header { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
-    .card-name { font-weight: 700; font-size: 15px; flex: 1; }
-    .tag {
-      font-size: 11px; font-weight: 700; border-radius: 6px;
-      padding: 2px 7px; white-space: nowrap;
-    }
-    .tag-urgent { background: #ffeaa7; color: #d35400; }
-    .tag-new    { background: #dfe6e9; color: #2d3436; }
-    .price { font-size: 17px; font-weight: 800; color: #e17055; margin-bottom: 4px; }
-    .meta  { font-size: 12px; color: #636e72; }
-    .urgent-reason { font-size: 11px; color: #e17055; margin-top: 4px; }
+    /* 실거래가 표 */
+    .trade-table { width: 100%; border-collapse: collapse;
+                   background: #fff; border-radius: 12px; overflow: hidden;
+                   box-shadow: 0 1px 4px rgba(0,0,0,.06); margin-bottom: 10px; }
+    .trade-table th { background: #6c5ce7; color: #fff; font-size: 12px;
+                      padding: 10px 12px; text-align: left; font-weight: 600; }
+    .trade-table td { padding: 10px 12px; font-size: 13px; border-bottom: 1px solid #f0f0f0; }
+    .trade-table tr:last-child td { border-bottom: none; }
+    .trade-table tr:hover td { background: #f8f8ff; }
+    .price-cell { font-weight: 700; color: #e17055; }
 
-    /* 그래프 embed */
+    /* 그래프 */
     .chart-wrap { background:#fff; border-radius:12px; padding:12px;
                   margin-bottom:10px; box-shadow:0 1px 4px rgba(0,0,0,.06); }
 
-    /* 유튜브 섹션 */
-    .yt-item { background:#fff; border-radius:12px; padding:12px 14px;
-               margin-bottom:8px; box-shadow:0 1px 4px rgba(0,0,0,.06); }
-    .yt-title { font-weight:600; font-size:13px; margin-bottom:4px; }
-    .yt-meta  { font-size:11px; color:#636e72; }
-    .yt-keywords { display:flex; flex-wrap:wrap; gap:4px; margin-top:6px; }
+    /* 유튜브 채널 그룹 */
+    .channel-group { background:#fff; border-radius:12px; padding:14px 16px;
+                     margin-bottom:12px; box-shadow:0 1px 4px rgba(0,0,0,.06); }
+    .channel-name { font-size:15px; font-weight:700; color:#6c5ce7; margin-bottom:10px;
+                    padding-bottom:8px; border-bottom:2px solid #f0f0f0; }
+    .video-item { margin-bottom:10px; padding-bottom:10px; border-bottom:1px solid #f8f8f8; }
+    .video-item:last-child { margin-bottom:0; padding-bottom:0; border-bottom:none; }
+    .video-title { font-size:13px; font-weight:600; margin-bottom:3px; }
+    .video-meta  { font-size:11px; color:#636e72; margin-bottom:5px; }
+    .yt-keywords { display:flex; flex-wrap:wrap; gap:4px; }
     .kw-tag { font-size:11px; background:#e8f4fd; color:#2980b9;
               border-radius:5px; padding:2px 7px; }
+    .no-keyword { font-size:11px; color:#b2bec3; }
 
-    /* 지도 */
-    .map-section { margin-bottom: 20px; }
-
-    /* 통계 뱃지 */
-    .stats { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
-    .stat-badge { background:#fff; border-radius:10px; padding:10px 14px;
-                  box-shadow:0 1px 4px rgba(0,0,0,.06); flex:1; min-width:100px; text-align:center; }
-    .stat-num { font-size:22px; font-weight:800; color:#6c5ce7; }
-    .stat-label { font-size:11px; color:#636e72; margin-top:2px; }
+    /* 키워드 랭킹 */
+    .card { background:#fff; border-radius:12px; padding:14px 16px;
+            margin-bottom:10px; box-shadow:0 1px 4px rgba(0,0,0,.06); }
 
     a { color: #3498db; text-decoration: none; }
     footer { text-align:center; font-size:11px; color:#b2bec3; margin-top:24px; padding-bottom:20px; }
@@ -65,86 +57,37 @@
 </head>
 <body>
 <div class="container">
-  <h1>🏠 부동산 매물 리포트</h1>
-  <p class="subtitle">{{ date }} 기준 · 서울/경기 아파트 5억~9억 17~24평</p>
+  <h1>🏠 부동산 리포트</h1>
+  <p class="subtitle">{{ date }} 기준 자동 생성</p>
 
-  <!-- 통계 요약 -->
-  <div class="stats">
-    <div class="stat-badge">
-      <div class="stat-num">{{ total_count }}</div>
-      <div class="stat-label">전체 매물</div>
-    </div>
-    <div class="stat-badge">
-      <div class="stat-num">{{ new_count }}</div>
-      <div class="stat-label">신규 매물</div>
-    </div>
-    <div class="stat-badge">
-      <div class="stat-num">{{ urgent_count }}</div>
-      <div class="stat-label">급매</div>
-    </div>
-  </div>
-
-  <!-- 급매 섹션 -->
-  {% if urgent_listings %}
-  <div class="section-title">🚨 급매 매물</div>
-  {% for l in urgent_listings %}
-  <div class="card">
-    <div class="card-header">
-      <span class="card-name">{{ l.name }}</span>
-      <span class="tag tag-urgent">🚨 급매</span>
-      {% if l.is_new %}<span class="tag tag-new">🆕 신규</span>{% endif %}
-    </div>
-    <div class="price">{{ (l.price // 10000) }}억 {{ "{:,}".format(l.price % 10000) }}만원</div>
-    <div class="meta">{{ l.area_pyeong }}평 · {{ l.floor }}층 · {{ l.address }}</div>
-    {% if l.urgent_reason %}
-    <div class="urgent-reason">{{ l.urgent_reason }}</div>
-    {% endif %}
-    <div style="margin-top:8px"><a href="{{ l.url }}">네이버 매물 보기 →</a></div>
-  </div>
-  {% endfor %}
+  <!-- 최근 실거래가 TOP 5 -->
+  {% if recent_trades %}
+  <div class="section-title">🏷️ 즐겨찾기 단지 최근 실거래가</div>
+  <table class="trade-table">
+    <thead>
+      <tr>
+        <th>날짜</th>
+        <th>단지명</th>
+        <th>평형</th>
+        <th>실거래가</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for t in recent_trades %}
+      <tr>
+        <td>{{ t.deal_date }}</td>
+        <td>{{ t.complex_name }}</td>
+        <td>{{ "%.1f"|format(t.area_m2 / 3.305785) }}평</td>
+        <td class="price-cell">{{ "{:,}".format(t.deal_amount) }}만원</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
   {% endif %}
-
-  <!-- 신규 매물 섹션 -->
-  {% if new_listings %}
-  <div class="section-title">🆕 신규 등록 매물</div>
-  {% for l in new_listings %}
-  <div class="card">
-    <div class="card-header">
-      <span class="card-name">{{ l.name }}</span>
-      <span class="tag tag-new">🆕 신규</span>
-    </div>
-    <div class="price">{{ (l.price // 10000) }}억 {{ "{:,}".format(l.price % 10000) }}만원</div>
-    <div class="meta">{{ l.area_pyeong }}평 · {{ l.floor }}층 · {{ l.address }}</div>
-    <div style="margin-top:8px"><a href="{{ l.url }}">네이버 매물 보기 →</a></div>
-  </div>
-  {% endfor %}
-  {% endif %}
-
-  <!-- 전체 매물 섹션 -->
-  <div class="section-title">📋 전체 매물 ({{ total_count }}건)</div>
-  {% for l in all_listings %}
-  <div class="card">
-    <div class="card-header">
-      <span class="card-name">{{ l.name }}</span>
-      {% if l.is_urgent %}<span class="tag tag-urgent">🚨 급매</span>{% endif %}
-      {% if l.is_new %}<span class="tag tag-new">🆕 신규</span>{% endif %}
-    </div>
-    <div class="price">{{ (l.price // 10000) }}억 {{ "{:,}".format(l.price % 10000) }}만원</div>
-    <div class="meta">{{ l.area_pyeong }}평 · {{ l.floor }}층 · {{ l.address }}</div>
-    {% if l.description %}
-    <div class="meta" style="margin-top:4px">{{ l.description }}</div>
-    {% endif %}
-    <div style="margin-top:8px"><a href="{{ l.url }}">네이버 매물 보기 →</a></div>
-  </div>
-  {% endfor %}
-
-  <!-- 지도 -->
-  <div class="section-title">🗺️ 매물 지도</div>
-  <div class="map-section">{{ map_html | safe }}</div>
 
   <!-- 즐겨찾기 단지 실거래가 그래프 -->
   {% if charts %}
-  <div class="section-title">📈 즐겨찾기 단지 실거래가 추이</div>
+  <div class="section-title">📈 단지별 실거래가 추이</div>
   {% for chart in charts %}
   <div class="chart-wrap">
     <div style="font-weight:700;margin-bottom:8px">{{ chart.name }}</div>
@@ -159,10 +102,10 @@
 
   <!-- 유튜브 분석 -->
   {% if youtube_summary %}
-  <div class="section-title">📺 유튜브 부동산 채널 키워드 분석</div>
+  <div class="section-title">📺 유튜브 채널별 분석 (최근 30일)</div>
 
   {% if youtube_summary.keyword_ranking %}
-  <div class="card" style="margin-bottom:12px">
+  <div class="card" style="margin-bottom:16px">
     <div style="font-weight:700;margin-bottom:8px">지역 언급 TOP {{ youtube_summary.keyword_ranking|length }}</div>
     <div class="yt-keywords">
       {% for kw, cnt in youtube_summary.keyword_ranking %}
@@ -172,25 +115,29 @@
   </div>
   {% endif %}
 
-  {% for video in youtube_summary.all_analyses %}
-  <div class="yt-item">
-    <div class="yt-title"><a href="{{ video.url }}" target="_blank">{{ video.title }}</a></div>
-    <div class="yt-meta">{{ video.channel }} · {{ video.published_at }}</div>
-    {% if video.keywords %}
-    <div class="yt-keywords">
-      {% for kw, cnt in video.keywords.items() %}
-      <span class="kw-tag">{{ kw }} ×{{ cnt }}</span>
-      {% endfor %}
+  {% for channel_name, videos in youtube_summary.by_channel.items() %}
+  <div class="channel-group">
+    <div class="channel-name">📺 {{ channel_name }}</div>
+    {% for video in videos %}
+    <div class="video-item">
+      <div class="video-title"><a href="{{ video.url }}" target="_blank">{{ video.title }}</a></div>
+      <div class="video-meta">{{ video.published_at }}</div>
+      {% if video.keywords %}
+      <div class="yt-keywords">
+        {% for kw, cnt in video.keywords.items() %}
+        <span class="kw-tag">{{ kw }} ×{{ cnt }}</span>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="no-keyword">관심 지역 언급 없음</div>
+      {% endif %}
     </div>
-    {% endif %}
+    {% endfor %}
   </div>
   {% endfor %}
   {% endif %}
 
-  <footer>
-    자동 생성된 리포트입니다 · {{ date }}<br>
-    <a href="https://land.naver.com" target="_blank">네이버 부동산</a>에서 실제 매물을 확인하세요
-  </footer>
+  <footer>자동 생성된 리포트입니다 · {{ date }}</footer>
 </div>
 </body>
 </html>
