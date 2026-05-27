@@ -7,9 +7,8 @@ from pathlib import Path
 from jinja2 import Environment, FileSystemLoader
 
 from config_loader import load_settings, load_channels, load_watchlist
-from crawlers import naver_land, kreb_api
-from analyzers import urgent_sale, new_listing, price_alert, price_chart, youtube_analysis
-from report import map as map_builder
+from crawlers import kreb_api
+from analyzers import price_alert, price_chart, youtube_analysis
 from notifiers import gmail_sender, notion_logger
 
 REPORT_DIR = Path("docs")  # GitHub Pages는 /docs 또는 gh-pages 브랜치
@@ -27,26 +26,6 @@ async def run(dry_run: bool = False) -> None:
     alert_threshold = watchlist["price_alert_threshold"]
 
     print(f"[main] 실행 시작: {today}")
-
-    # ── 1. 매물 크롤링 ─────────────────────────────────────────────
-    if dry_run:
-        print("[main] dry-run 모드: 크롤링 생략")
-        listings = []
-    else:
-        print("[main] 직방 API 매물 수집 중...")
-        listings = await naver_land.fetch_listings(settings)
-        print(f"[main] 수집된 매물: {len(listings)}건")
-
-    # ── 2. 신규 매물 감지 ──────────────────────────────────────────
-    listings = new_listing.detect_new(listings)
-    new_count = sum(1 for l in listings if l.is_new)
-    print(f"[main] 신규 매물: {new_count}건")
-
-    # ── 3. 급매 태그 ───────────────────────────────────────────────
-    listings = urgent_sale.tag_urgent(listings, settings)
-    urgent_listings = [l for l in listings if l.is_urgent]
-    new_listings_only = [l for l in listings if l.is_new and not l.is_urgent]
-    print(f"[main] 급매 매물: {len(urgent_listings)}건")
 
     # ── 4. 즐겨찾기 단지 실거래가 수집 + 그래프 ────────────────────
     charts = []
@@ -71,8 +50,9 @@ async def run(dry_run: bool = False) -> None:
 
         # 그래프
         chart_unit = settings.get("report", {}).get("chart_unit", "일")
-        if transactions:
-            chart_data = price_chart.build_chart(name, transactions, CHART_DIR, unit=chart_unit)
+        filtered = [t for t in transactions if 42 <= t.area_m2 <= 70]
+        if filtered:
+            chart_data = price_chart.build_chart(name, filtered, CHART_DIR, unit=chart_unit)
             if chart_data:
                 charts.append(chart_data)
 
@@ -96,7 +76,7 @@ async def run(dry_run: bool = False) -> None:
         if not dry_run:
             txs = await kreb_api.fetch_recent_transactions(name, region_code, months=6)
             trades_by_complex[name] = sorted(
-                txs,
+                [t for t in txs if 42 <= t.area_m2 <= 70],
                 key=lambda t: (t.deal_year, t.deal_month, t.deal_day),
                 reverse=True,
             )[:5]
@@ -152,19 +132,13 @@ async def run(dry_run: bool = False) -> None:
         f"{kw}({cnt})" for kw, cnt in yt_summary.get("keyword_ranking", [])[:3]
     )
     notion_logger.log(
-        total_count=len(listings),
-        new_count=new_count,
-        urgent_count=len(urgent_listings),
         report_url=gh_pages_url,
         youtube_top3=top3_str,
         price_alert=price_alerted,
         favorites_summary=favorites_summary,
     )
 
-    # ── 9. 전날 매물 ID 저장 (다음 실행을 위해) ────────────────────
-    new_listing.save_current(listings)
-
-    print(f"[main] 완료: 매물 {len(listings)}건 / 신규 {new_count}건 / 급매 {len(urgent_listings)}건")
+    print("[main] 완료")
 
 
 if __name__ == "__main__":
