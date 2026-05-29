@@ -31,9 +31,6 @@ def _get_or_create_db() -> str:
         "title": [{"type": "text", "text": {"content": "부동산 자동화 로그"}}],
         "properties": {
             "날짜": {"date": {}},
-            "매물수": {"number": {}},
-            "신규매물": {"number": {}},
-            "급매수": {"number": {}},
             "리포트URL": {"url": {}},
             "유튜브언급TOP3": {"rich_text": {}},
             "가격알림발생": {"checkbox": {}},
@@ -54,9 +51,6 @@ def _get_or_create_db() -> str:
 
 
 def log(
-    total_count: int,
-    new_count: int,
-    urgent_count: int,
     report_url: str,
     youtube_top3: str,
     price_alert: bool,
@@ -76,9 +70,6 @@ def log(
         "parent": {"database_id": db_id},
         "properties": {
             "날짜": {"date": {"start": today}},
-            "매물수": {"number": total_count},
-            "신규매물": {"number": new_count},
-            "급매수": {"number": urgent_count},
             "리포트URL": {"url": report_url or None},
             "유튜브언급TOP3": {"rich_text": [{"text": {"content": youtube_top3[:2000]}}]},
             "가격알림발생": {"checkbox": price_alert},

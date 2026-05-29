@@ -73,12 +73,13 @@
         <th>평형</th>
         <th>실거래가</th>
       </tr>
+
     </thead>
     <tbody>
       {% for t in trades %}
       <tr>
         <td>{{ t.deal_date }}</td>
-        <td>{{ "%.1f"|format(t.area_m2 / 3.305785) }}평</td>
+        <td>{{ "%.1f"|format(t.area_m2 / 3.305785) }}평 ({{ "%.1f"|format(t.area_m2) }}㎡)</td>
         <td class="price-cell">{{ "{:,}".format(t.deal_amount) }}만원</td>
       </tr>
       {% endfor %}
@@ -131,8 +132,9 @@
         <span class="kw-tag">{{ kw }} ×{{ cnt }}</span>
         {% endfor %}
       </div>
-      {% else %}
-      <div class="no-keyword">관심 지역 언급 없음</div>
+      {% endif %}
+      {% if video.summary %}
+      <div style="font-size:12px;color:#636e72;margin-top:4px">{{ video.summary }}</div>
       {% endif %}
     </div>
     {% endfor %}

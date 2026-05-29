@@ -62,6 +62,12 @@ def _make_figure(complex_name: str, grouped: dict, transactions: list) -> go.Fig
 
 def build_chart(complex_name: str, transactions: list, output_dir: Path, unit: str = "일") -> dict:
     """HTML(웹용) + base64 PNG(이메일용) 반환. 데이터 없으면 빈 dict."""
+    from datetime import date as _date, timedelta
+    cutoff = _date.today() - timedelta(days=90)
+    transactions = [
+        t for t in transactions
+        if _date(t.deal_year, t.deal_month, t.deal_day) >= cutoff
+    ]
     grouped = _group(transactions, unit)
     if not grouped:
         return {}
