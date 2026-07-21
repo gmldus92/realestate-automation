@@ -24,29 +24,41 @@ def _group(transactions: list, unit: str) -> dict[str, list[int]]:
     return grouped
 
 
+AREA_COLORS = ["#1456f0", "#ea5ec1", "#3daeff", "#e17055", "#00b894", "#fdcb6e"]
+
+
 def _make_figure(complex_name: str, grouped: dict, transactions: list) -> go.Figure:
     keys = sorted(grouped.keys())
     avgs = [int(sum(grouped[k]) / len(grouped[k])) for k in keys]
 
-    # 모든 개별 거래가격 점
-    all_dates = []
-    all_prices = []
+    # 평형별로 그룹화
+    area_groups: dict[float, list] = defaultdict(list)
     for t in transactions:
         if t.deal_amount <= 0:
             continue
-        all_dates.append(f"{t.deal_year}-{t.deal_month:02d}-{t.deal_day:02d}")
-        all_prices.append(t.deal_amount)
+        area_groups[round(t.area_m2, 1)].append(t)
 
     fig = go.Figure()
-    fig.add_trace(go.Scatter(
-        x=all_dates, y=all_prices, name="거래가격",
-        mode="markers", marker=dict(color="#b2bec3", size=7, symbol="circle"),
-    ))
+
+    # 평형별 색상 점
+    for i, area_m2 in enumerate(sorted(area_groups.keys())):
+        txs = area_groups[area_m2]
+        color = AREA_COLORS[i % len(AREA_COLORS)]
+        pyeong = area_m2 / 3.305785
+        label = f"{pyeong:.0f}평 ({area_m2}㎡)"
+        dates = [f"{t.deal_year}-{t.deal_month:02d}-{t.deal_day:02d}" for t in txs]
+        prices = [t.deal_amount for t in txs]
+        fig.add_trace(go.Scatter(
+            x=dates, y=prices, name=label,
+            mode="markers", marker=dict(color=color, size=9, symbol="circle"),
+        ))
+
+    # 전체 평균가 선
     fig.add_trace(go.Scatter(
         x=keys, y=avgs, name="평균가",
-        mode="lines+markers", line=dict(color="#3498db", width=2),
-        marker=dict(color="#3498db", size=6),
+        mode="lines", line=dict(color="#636e72", width=1.5, dash="dot"),
     ))
+
     fig.update_layout(
         title=f"{complex_name} 실거래가 추이 (만원)",
         xaxis_title="날짜",
