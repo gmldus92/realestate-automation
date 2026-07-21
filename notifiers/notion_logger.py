@@ -52,7 +52,6 @@ def _get_or_create_db() -> str:
 
 def log(
     report_url: str,
-    youtube_top3: str,
     price_alert: bool,
     favorites_summary: str,
 ) -> None:
@@ -71,7 +70,6 @@ def log(
         "properties": {
             "날짜": {"date": {"start": today}},
             "리포트URL": {"url": report_url or None},
-            "유튜브언급TOP3": {"rich_text": [{"text": {"content": youtube_top3[:2000]}}]},
             "가격알림발생": {"checkbox": price_alert},
             "즐겨찾기단지요약": {"rich_text": [{"text": {"content": favorites_summary[:2000]}}]},
         },

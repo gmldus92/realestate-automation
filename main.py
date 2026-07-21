@@ -1,14 +1,14 @@
 """부동산 자동화 시스템 — 진입점"""
 import asyncio
 import argparse
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
 
-from config_loader import load_settings, load_channels, load_watchlist
+from config_loader import load_settings, load_watchlist
 from crawlers import kreb_api
-from analyzers import price_alert, price_chart, youtube_analysis
+from analyzers import price_alert, price_chart
 from notifiers import gmail_sender, notion_logger
 
 REPORT_DIR = Path("docs")  # GitHub Pages는 /docs 또는 gh-pages 브랜치
@@ -19,10 +19,8 @@ TEMPLATE_DIR = Path("report/templates")
 async def run(dry_run: bool = False) -> None:
     today = date.today().isoformat()
     settings = load_settings()
-    channels = load_channels()
     watchlist = load_watchlist()
     favorites = watchlist["favorites"]
-    watch_regions = watchlist["watch_regions"]
     alert_threshold = watchlist["price_alert_threshold"]
 
     print(f"[main] 실행 시작: {today}")
@@ -38,9 +36,16 @@ async def run(dry_run: bool = False) -> None:
         # 행정구역 코드 — 안양=41171, 광명=41210 (앞 5자리)
         region_code_map = {
             "안양": "41171",
+            "안양 만안": "41171",   # 만안구: 안양동·석수동·박달동
+            "안양 동안": "41173",   # 동안구: 비산동·관양동·평촌동·호계동
+            "안양 관양동": "41173", # 관양동 → 동안구
+            "안양 비산": "41173",   # 비산동 → 동안구
+            "안양 평촌": "41173",   # 평촌동 → 동안구
             "광명": "41210",
+            "광명 철산": "41210",
+            "구로": "11530",
         }
-        region_code = region_code_map.get(area.split()[0], "41171")
+        region_code = region_code_map.get(area, region_code_map.get(area.split()[0], "41171"))
 
         if dry_run:
             transactions = []
@@ -71,8 +76,17 @@ async def run(dry_run: bool = False) -> None:
     for fav in favorites:
         name = fav["name"]
         area = fav.get("area", "")
-        region_code_map = {"안양": "41171", "광명": "41210"}
-        region_code = region_code_map.get(area.split()[0], "41171")
+        region_code_map = {
+            "안양": "41171",
+            "안양 만안": "41171",
+            "안양 동안": "41173",
+            "안양 비산": "41173",
+            "안양 평촌": "41173",
+            "광명": "41210",
+            "광명 철산": "41210",
+            "구로": "11530",
+        }
+        region_code = region_code_map.get(area, region_code_map.get(area.split()[0], "41171"))
         if not dry_run:
             txs = await kreb_api.fetch_recent_transactions(name, region_code, months=6)
             trades_by_complex[name] = sorted(
@@ -81,23 +95,13 @@ async def run(dry_run: bool = False) -> None:
                 reverse=True,
             )[:5]
 
-    # ── 5. 유튜브 분석 ─────────────────────────────────────────────
-    if dry_run:
-        yt_summary = {}
-    else:
-        print("[main] 유튜브 채널 분석 중...")
-        analyses = await youtube_analysis.analyze_channels(channels, watch_regions)
-        yt_summary = youtube_analysis.summarize(analyses)
-        print(f"[main] 분석된 영상: {yt_summary.get('total_videos', 0)}개")
-
-    # ── 6. 리포트 생성 ─────────────────────────────────────────────
+    # ── 5. 리포트 생성 ─────────────────────────────────────────────
     env = Environment(loader=FileSystemLoader(str(TEMPLATE_DIR)))
     report_template = env.get_template("report.html")
     render_args = dict(
         date=today,
         trades_by_complex=trades_by_complex,
         charts=charts,
-        youtube_summary=yt_summary,
     )
     report_html = report_template.render(**render_args, is_email=False)
     email_html = report_template.render(**render_args, is_email=True)
@@ -111,12 +115,18 @@ async def run(dry_run: bool = False) -> None:
     repo_name = "realestate-automation"
     gh_pages_url = f"https://{{github_username}}.github.io/{repo_name}/"
 
-    # ── 7. Gmail 발송 ──────────────────────────────────────────────
-    gmail_sender.send_report(email_html, today)
+    # ── 7. Gmail 발송 (월요일=0, 목요일=3) ────────────────────────
+    is_send_day = datetime.now().weekday() in (0, 3)
+    if not dry_run and is_send_day:
+        gmail_sender.send_report(email_html, today)
+    elif dry_run:
+        print("[main] dry-run: 이메일 발송 건너뜀")
+    else:
+        print("[main] 오늘은 이메일 발송일이 아닙니다 (월/목만 발송)")
 
-    # 가격 알림 즉시 발송
+    # 가격 알림 즉시 발송 (요일 무관)
     price_alerted = False
-    if all_alerts:
+    if all_alerts and not dry_run:
         price_alerted = True
         alert_template = env.get_template("alert.html")
         alert_html = alert_template.render(
@@ -128,12 +138,8 @@ async def run(dry_run: bool = False) -> None:
         print(f"[main] 가격 알림 발송: {len(all_alerts)}건")
 
     # ── 8. Notion 로그 저장 ────────────────────────────────────────
-    top3_str = ", ".join(
-        f"{kw}({cnt})" for kw, cnt in yt_summary.get("keyword_ranking", [])[:3]
-    )
     notion_logger.log(
         report_url=gh_pages_url,
-        youtube_top3=top3_str,
         price_alert=price_alerted,
         favorites_summary=favorites_summary,
     )

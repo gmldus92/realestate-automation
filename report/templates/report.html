@@ -33,24 +33,6 @@
     .chart-wrap { background:#fff; border-radius:12px; padding:12px;
                   margin-bottom:10px; box-shadow:0 1px 4px rgba(0,0,0,.06); }
 
-    /* 유튜브 채널 그룹 */
-    .channel-group { background:#fff; border-radius:12px; padding:14px 16px;
-                     margin-bottom:12px; box-shadow:0 1px 4px rgba(0,0,0,.06); }
-    .channel-name { font-size:15px; font-weight:700; color:#6c5ce7; margin-bottom:10px;
-                    padding-bottom:8px; border-bottom:2px solid #f0f0f0; }
-    .video-item { margin-bottom:10px; padding-bottom:10px; border-bottom:1px solid #f8f8f8; }
-    .video-item:last-child { margin-bottom:0; padding-bottom:0; border-bottom:none; }
-    .video-title { font-size:13px; font-weight:600; margin-bottom:3px; }
-    .video-meta  { font-size:11px; color:#636e72; margin-bottom:5px; }
-    .yt-keywords { display:flex; flex-wrap:wrap; gap:4px; }
-    .kw-tag { font-size:11px; background:#e8f4fd; color:#2980b9;
-              border-radius:5px; padding:2px 7px; }
-    .no-keyword { font-size:11px; color:#b2bec3; }
-
-    /* 키워드 랭킹 */
-    .card { background:#fff; border-radius:12px; padding:14px 16px;
-            margin-bottom:10px; box-shadow:0 1px 4px rgba(0,0,0,.06); }
-
     a { color: #3498db; text-decoration: none; }
     footer { text-align:center; font-size:11px; color:#b2bec3; margin-top:24px; padding-bottom:20px; }
   </style>
@@ -100,44 +82,6 @@
     {% else %}
     {{ chart.html | safe }}
     {% endif %}
-  </div>
-  {% endfor %}
-  {% endif %}
-
-  <!-- 유튜브 분석 -->
-  {% if youtube_summary %}
-  <div class="section-title">📺 유튜브 채널별 분석 (최근 30일)</div>
-
-  {% if youtube_summary.keyword_ranking %}
-  <div class="card" style="margin-bottom:16px">
-    <div style="font-weight:700;margin-bottom:8px">지역 언급 TOP {{ youtube_summary.keyword_ranking|length }}</div>
-    <div class="yt-keywords">
-      {% for kw, cnt in youtube_summary.keyword_ranking %}
-      <span class="kw-tag">{{ kw }} ({{ cnt }})</span>
-      {% endfor %}
-    </div>
-  </div>
-  {% endif %}
-
-  {% for channel_name, videos in youtube_summary.by_channel.items() %}
-  <div class="channel-group">
-    <div class="channel-name">📺 {{ channel_name }}</div>
-    {% for video in videos %}
-    <div class="video-item">
-      <div class="video-title"><a href="{{ video.url }}" target="_blank">{{ video.title }}</a></div>
-      <div class="video-meta">{{ video.published_at }}</div>
-      {% if video.keywords %}
-      <div class="yt-keywords">
-        {% for kw, cnt in video.keywords.items() %}
-        <span class="kw-tag">{{ kw }} ×{{ cnt }}</span>
-        {% endfor %}
-      </div>
-      {% endif %}
-      {% if video.summary %}
-      <div style="font-size:12px;color:#636e72;margin-top:4px">{{ video.summary }}</div>
-      {% endif %}
-    </div>
-    {% endfor %}
   </div>
   {% endfor %}
   {% endif %}

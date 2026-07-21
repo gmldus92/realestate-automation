@@ -2,7 +2,7 @@ name: realestate-daily
 
 on:
   schedule:
-    - cron: "0 0 * * *"  # 매일 오전 9시 KST
+    - cron: "0 0 * * *"  # 매일 오전 9시 KST (이메일은 코드에서 월/목만 발송)
   workflow_dispatch:
 
 permissions:
@@ -27,7 +27,6 @@ jobs:
       - name: run
         env:
           KREB_API_KEY: ${{ secrets.KREB_API_KEY }}
-          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
           GMAIL_CREDENTIALS: ${{ secrets.GMAIL_CREDENTIALS }}
           REPORT_EMAIL: ${{ secrets.REPORT_EMAIL }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
