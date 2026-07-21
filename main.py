@@ -43,6 +43,7 @@ async def run(dry_run: bool = False) -> None:
             "안양 평촌": "41173",   # 평촌동 → 동안구
             "광명": "41210",
             "광명 철산": "41210",
+            "광명 하안": "41210",
             "구로": "11530",
         }
         region_code = region_code_map.get(area, region_code_map.get(area.split()[0], "41171"))
@@ -84,6 +85,7 @@ async def run(dry_run: bool = False) -> None:
             "안양 평촌": "41173",
             "광명": "41210",
             "광명 철산": "41210",
+            "광명 하안": "41210",
             "구로": "11530",
         }
         region_code = region_code_map.get(area, region_code_map.get(area.split()[0], "41171"))
