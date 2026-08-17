@@ -52,7 +52,11 @@ async def run(dry_run: bool = False) -> None:
             transactions = []
         else:
             print(f"[main] {name} 실거래가 수집 중...")
-            transactions = await kreb_api.fetch_recent_transactions(name, region_code, months=6)
+            try:
+                transactions = await kreb_api.fetch_recent_transactions(name, region_code, months=6)
+            except Exception as e:
+                print(f"[main] {name} 실거래가 수집 실패, 건너뜀: {e}")
+                transactions = []
 
         # 그래프
         chart_unit = settings.get("report", {}).get("chart_unit", "일")
@@ -91,7 +95,11 @@ async def run(dry_run: bool = False) -> None:
         }
         region_code = region_code_map.get(area, region_code_map.get(area.split()[0], "41171"))
         if not dry_run:
-            txs = await kreb_api.fetch_recent_transactions(name, region_code, months=6)
+            try:
+                txs = await kreb_api.fetch_recent_transactions(name, region_code, months=6)
+            except Exception as e:
+                print(f"[main] {name} 실거래가 수집 실패, 건너뜀: {e}")
+                txs = []
             trades_by_complex[name] = sorted(
                 [t for t in txs if 42 <= t.area_m2 <= 70],
                 key=lambda t: (t.deal_year, t.deal_month, t.deal_day),

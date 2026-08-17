@@ -48,10 +48,21 @@ async def fetch_transactions(region_code: str, yyyymm: str) -> list[Transaction]
 
     results: list[Transaction] = []
 
-    connector = aiohttp.TCPConnector(ssl=False)
-    async with aiohttp.ClientSession(connector=connector) as session:
-        async with session.get(BASE_URL, params=params) as resp:
-            text = await resp.text()
+    timeout = aiohttp.ClientTimeout(total=30, connect=10)
+    text = ""
+    for attempt in range(1, 4):
+        try:
+            connector = aiohttp.TCPConnector(ssl=False)
+            async with aiohttp.ClientSession(connector=connector, timeout=timeout) as session:
+                async with session.get(BASE_URL, params=params) as resp:
+                    text = await resp.text()
+            break
+        except (aiohttp.ClientError, asyncio.TimeoutError) as e:
+            if attempt == 3:
+                print(f"[kreb_api] {region_code}/{yyyymm} 요청 {attempt}회 실패, 포기: {e}")
+                return []
+            print(f"[kreb_api] {region_code}/{yyyymm} 요청 {attempt}회 실패, 재시도: {e}")
+            await asyncio.sleep(2 ** attempt)
 
     try:
         root = ET.fromstring(text)
@@ -73,7 +84,7 @@ async def fetch_transactions(region_code: str, yyyymm: str) -> list[Transaction]
                 region_code=region_code,
             ))
     except ET.ParseError as e:
-        print(f"[kreb_api] XML 파싱 오류: {e}")
+        print(f"[kreb_api] XML 파싱 오류: {e} | 응답 앞부분: {text[:300]}")
 
     return results
 
@@ -91,7 +102,9 @@ async def fetch_recent_transactions(complex_name: str, region_code: str, months:
         tasks.append(fetch_transactions(region_code, f"{y}{m:02d}"))
 
     all_results = []
-    for batch in await asyncio.gather(*tasks):
+    for task in tasks:
+        batch = await task
         all_results.extend(batch)
+        await asyncio.sleep(0.5)
 
     return [t for t in all_results if complex_name in t.complex_name]
